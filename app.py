@@ -7,14 +7,18 @@ from crawl4ai import (
     CrawlerRunConfig,
     DefaultMarkdownGenerator,
     LLMConfig,
-    LLMContentFilter
+    LLMContentFilter,
+    BrowserConfig
 )
+
 
 app = FastAPI()
 
 
 class CrawlRequest(BaseModel):
     url: str
+    debug: bool = False
+
 
 
 def create_config():
@@ -46,38 +50,42 @@ def create_config():
                 ),
 
                 instruction="""
-You are cleaning content for a RAG knowledge base.
+Extract the complete useful content from this webpage for a retrieval augmented generation knowledge base.
+
+Do not summarize.
 
 Keep:
 
-- Main article/documentation content
-- Titles
-- Headings
-- Paragraphs
-- Lists
-- Tables
-- Code blocks
-- Important links
+- article text
+- explanations
+- examples
+- headings
+- lists
+- tables
+- technical details
+- important links
+- code blocks
 
-Remove:
+Remove only:
 
-- Navigation menus
-- Headers
-- Footers
-- Cookie banners
-- Login/signup prompts
-- Advertisements
-- Social media widgets
-- Related article suggestions
+- navigation menus
+- cookie banners
+- advertisements
+- login/signup prompts
+- unrelated recommendations
+- social media widgets
 
-Do not summarize.
-Preserve the original meaning and structure.
+If this is a guide, tutorial, documentation page, or reference article:
+preserve the full content and structure.
+
+Maintain the original meaning.
 """,
 
                 chunk_token_threshold=4096
             )
         )
     )
+
 
 
 def extract_sections(markdown):
@@ -87,17 +95,30 @@ def extract_sections(markdown):
     current_heading = "Introduction"
     current_content = []
 
+
     for line in markdown.split("\n"):
 
-        if line.startswith("#"):
+        if line.strip().startswith("#"):
 
             if current_content:
-                sections.append({
-                    "heading": current_heading,
-                    "content": "\n".join(current_content).strip()
-                })
 
-            current_heading = line.lstrip("#").strip()
+                content = "\n".join(
+                    current_content
+                ).strip()
+
+                if content:
+                    sections.append({
+                        "heading": current_heading,
+                        "content": content
+                    })
+
+
+            current_heading = (
+                line
+                .lstrip("#")
+                .strip()
+            )
+
             current_content = []
 
         else:
@@ -105,12 +126,42 @@ def extract_sections(markdown):
 
 
     if current_content:
-        sections.append({
-            "heading": current_heading,
-            "content": "\n".join(current_content).strip()
-        })
+
+        content = "\n".join(
+            current_content
+        ).strip()
+
+        if content:
+            sections.append({
+                "heading": current_heading,
+                "content": content
+            })
+
 
     return sections
+
+
+
+@app.on_event("startup")
+async def startup_check():
+
+    print("Crawl4AI configuration")
+    print(
+        "Provider:",
+        os.getenv(
+            "CRAWL4AI_LLM_PROVIDER",
+            "mistral/mistral-small-latest"
+        )
+    )
+
+    print(
+        "LLM Token configured:",
+        bool(
+            os.getenv(
+                "CRAWL4AI_LLM_TOKEN"
+            )
+        )
+    )
 
 
 
@@ -119,34 +170,92 @@ async def markdown(req: CrawlRequest):
 
     config = create_config()
 
-    async with AsyncWebCrawler() as crawler:
+
+    async with AsyncWebCrawler(
+        config=BrowserConfig(
+            headless=True,
+            java_script_enabled=True
+        )
+    ) as crawler:
+
 
         result = await crawler.arun(
+
             url=req.url,
-            config=config
+
+            config=config,
+
+            wait_for="body"
+
         )
 
 
-    markdown = result.markdown.fit_markdown
+    raw_markdown = (
+        result.markdown.raw_markdown
+        if result.markdown
+        else ""
+    )
 
-    return {
+
+    fit_markdown = (
+        result.markdown.fit_markdown
+        if result.markdown
+        else ""
+    )
+
+
+    # Prefer LLM cleaned markdown
+    markdown = fit_markdown.strip()
+
+
+    # Fallback if filter removes everything
+    if not markdown:
+        markdown = raw_markdown.strip()
+
+
+
+    response = {
 
         "url": req.url,
 
         "title": (
             result.metadata.get("title")
-            if result.metadata else None
+            if result.metadata
+            else None
         ),
 
         "description": (
             result.metadata.get("description")
-            if result.metadata else None
+            if result.metadata
+            else None
         ),
 
         "markdown": markdown,
 
         "sections": extract_sections(markdown),
 
-        "word_count": len(markdown.split())
+        "word_count": len(
+            markdown.split()
+        )
 
     }
+
+
+    if req.debug:
+
+        response["debug"] = {
+
+            "raw_length": len(
+                raw_markdown
+            ),
+
+            "fit_length": len(
+                fit_markdown
+            ),
+
+            "success": result.success
+
+        }
+
+
+    return response
