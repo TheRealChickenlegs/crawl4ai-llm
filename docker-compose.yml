@@ -1,0 +1,18 @@
+services:
+  crawl4ai-llm:
+    build: .
+    container_name: crawl4ai-llm
+
+    restart: unless-stopped
+
+    ports:
+      - "${CRAWL4AI_PORT:-8000}:${CRAWL4AI_PORT:-8000}"
+
+    environment:
+      PORT: ${CRAWL4AI_PORT:-8000}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      CRAWL4AI_LLM_PROVIDER: mistral/mistral-small-latest
+      CRAWL4AI_LLM_TOKEN: ${MISTRAL_API_KEY}
+      CRAWL4AI_LLM_BASE_URL: https://api.mistral.ai/v1
+      
+    shm_size: 2gb
