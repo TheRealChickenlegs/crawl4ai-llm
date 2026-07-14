@@ -6,10 +6,10 @@ services:
     restart: unless-stopped
 
     ports:
-      - "${CRAWL4AI_PORT:-8000}:${CRAWL4AI_PORT:-8000}"
+      - "${CRAWL4AI_PORT:-11236}:${CRAWL4AI_PORT:-11236}"
 
     environment:
-      PORT: ${CRAWL4AI_PORT:-8000}
+      PORT: ${CRAWL4AI_PORT:-11236}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       CRAWL4AI_LLM_PROVIDER: mistral/mistral-small-latest
       CRAWL4AI_LLM_TOKEN: ${MISTRAL_API_KEY}

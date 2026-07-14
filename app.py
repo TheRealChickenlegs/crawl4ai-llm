@@ -5,12 +5,10 @@ import os
 from crawl4ai import (
     AsyncWebCrawler,
     CrawlerRunConfig,
-    DefaultMarkdownGenerator
+    DefaultMarkdownGenerator,
+    LLMConfig,
+    LLMContentFilter
 )
-
-from crawl4ai.content_filter_strategy import LLMContentFilter
-from crawl4ai.types import LLMConfig
-
 
 app = FastAPI()
 
