@@ -20,6 +20,7 @@ RUN crawl4ai-setup
 
 COPY app.py .
 
+ENV PORT=11236
 EXPOSE ${PORT}
 
-CMD uvicorn app:app --host 0.0.0.0 --port ${PORT}
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT}"]

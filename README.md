@@ -105,7 +105,9 @@ Request node. It POSTs a URL (+ optional query) to this service and forwards
 
 ## Notes
 
-- `requirements.txt` pins `crawl4ai==0.9.2` and `litellm==1.68.0` to avoid
-  API drift on rebuild.
+- `requirements.txt` pins `crawl4ai==0.9.2`. Do **not** pin `litellm`
+  separately: `crawl4ai` vendors its own fork (`unclecode-litellm`) with a
+  different `openai` requirement, and an explicit `litellm` pin causes a
+  dependency conflict at build time.
 - The LLM filter is best-effort: if it fails, the response still returns the
   pruned/raw markdown and reports `filter_used` so you can detect the fallback.
