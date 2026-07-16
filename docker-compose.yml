@@ -10,9 +10,33 @@ services:
 
     environment:
       PORT: ${CRAWL4AI_PORT:-11236}
-      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-      CRAWL4AI_LLM_PROVIDER: mistral/mistral-small-latest
+
+      # Filter mode: prune | bm25 | llm
+      #   prune -> deterministic PruningContentFilter (default, Mistral-proof)
+      #   bm25  -> BM25ContentFilter focused on CRAWL4AI_QUERY
+      #   llm   -> LLMContentFilter via Mistral/OpenAI (best-effort)
+      CRAWL4AI_FILTER_MODE: ${CRAWL4AI_FILTER_MODE:-prune}
+
+      # Used by bm25 mode (and as a hint for llm mode)
+      CRAWL4AI_QUERY: ${CRAWL4AI_QUERY:-}
+
+      # Pruning tuning (prune mode)
+      CRAWL4AI_PRUNE_THRESHOLD: ${CRAWL4AI_PRUNE_THRESHOLD:-0.48}
+      CRAWL4AI_PRUNE_THRESHOLD_TYPE: ${CRAWL4AI_PRUNE_THRESHOLD_TYPE:-fixed}
+      CRAWL4AI_PRUNE_MIN_WORDS: ${CRAWL4AI_PRUNE_MIN_WORDS:-5}
+
+      # BM25 tuning (bm25 mode)
+      CRAWL4AI_BM25_THRESHOLD: ${CRAWL4AI_BM25_THRESHOLD:-1.0}
+
+      # LLM mode (mistral/openai/etc via LiteLLM)
+      CRAWL4AI_LLM_PROVIDER: ${CRAWL4AI_LLM_PROVIDER:-mistral/mistral-small-latest}
       CRAWL4AI_LLM_TOKEN: ${MISTRAL_API_KEY}
-      CRAWL4AI_LLM_BASE_URL: https://api.mistral.ai/v1
-      
+      CRAWL4AI_LLM_BASE_URL: ${CRAWL4AI_LLM_BASE_URL:-https://api.mistral.ai/v1}
+
+      # Markdown output options
+      CRAWL4AI_IGNORE_LINKS: ${CRAWL4AI_IGNORE_LINKS:-False}
+      CRAWL4AI_IGNORE_IMAGES: ${CRAWL4AI_IGNORE_IMAGES:-False}
+
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+
     shm_size: 2gb

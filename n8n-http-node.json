@@ -1,0 +1,91 @@
+{
+  "name": "Crawl4AI RAG Markdown",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11236/markdown",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{{ $json.url }}\",\n  \"query\": \"{{ $json.query }}\",\n  \"debug\": false\n}",
+        "options": {}
+      },
+      "name": "Crawl4AI Markdown",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "markdown",
+              "name": "markdown",
+              "type": "string",
+              "value": "={{ $json.markdown }}"
+            },
+            {
+              "id": "sections",
+              "name": "sections",
+              "type": "array",
+              "value": "={{ $json.sections }}"
+            },
+            {
+              "id": "filter_used",
+              "name": "filter_used",
+              "type": "string",
+              "value": "={{ $json.filter_used }}"
+            },
+            {
+              "id": "success",
+              "name": "success",
+              "type": "boolean",
+              "value": "={{ $json.success }}"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "type": "string",
+              "value": "={{ $json.error_message }}"
+            },
+            {
+              "id": "source_url",
+              "name": "source_url",
+              "type": "string",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract for RAG",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Crawl4AI Markdown": {
+      "main": [
+        [
+          {
+            "node": "Extract for RAG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "crawl4ai-rag"
+  }
+}
